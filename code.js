@@ -13,8 +13,13 @@ const SHEET_NAME = 'Data';
 function doGet(e) {
   const action = e.parameter.action;
   
+  if (action === 'getGPs') {
+    return getGPs();
+  }
+  
   if (action === 'getData') {
-    return getData();
+    const gp = e.parameter.gp;
+    return getData(gp);
   }
   
   return ContentService.createTextOutput(JSON.stringify({ error: 'Invalid Action' }))
@@ -33,19 +38,38 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function getData() {
+function getGPs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(SHEET_NAME);
   const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
+  const gps = new Set();
+  
+  // Column 1 is GramPanchayat
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][1]) gps.add(String(rows[i][1]));
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify({ data: Array.from(gps).sort() }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getData(filterGp) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  const rows = sheet.getDataRange().getValues();
   const data = [];
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
+    const currentGp = String(row[1]);
+    
+    // If filterGp is provided, only include matching rows
+    if (filterGp && currentGp !== filterGp) continue;
+
     data.push({
       rowIndex: i + 1,
       familyId: String(row[0]),
-      gramPanchayat: String(row[1]),
+      gramPanchayat: currentGp,
       studentName: String(row[2]),
       fatherName: String(row[3]),
       aadhaar: String(row[4]),
@@ -75,20 +99,10 @@ function updateData(data) {
 
   if (!rowIndex) return ContentService.createTextOutput("Error: No row index").setMimeType(ContentService.MimeType.TEXT);
 
-  // Column Mapping based on headers provided:
-  // K: 11 - सदस्य नामांकन हेतु अपात्र है
-  // L: 12 - पूर्व से नामांकित है
-  // M: 13 - यदि हाँ तो विद्यालय का प्रकार (Prev)
-  // N: 14 - विद्यालय का यूडायस कोड (Prev)
-  // O: 15 - नया नामांकन करा गया है
-  // P: 16 - यदि हाँ तो विद्यालय का प्रकार (New)
-  // Q: 17 - विद्यालय का यूडायस कोड (New)
-
   sheet.getRange(rowIndex, 11).setValue(data.ineligibleReason);
   sheet.getRange(rowIndex, 12).setValue(data.alreadyEnrolled);
   sheet.getRange(rowIndex, 13).setValue(data.prevSchoolType);
   
-  // Format UDISE code as string to preserve leading zero
   const prevUdiseCell = sheet.getRange(rowIndex, 14);
   prevUdiseCell.setNumberFormat("@");
   prevUdiseCell.setValue(data.prevUdiseCode);
