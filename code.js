@@ -6,6 +6,8 @@
  * 3. Replace content with this code.
  * 4. Deploy -> New Deployment -> Web App.
  * 5. Execute as: Me, Who has access: Anyone.
+ * 
+ * IMPORTANT: Use the URL ending in /exec for the app.
  */
 
 const DATA_SHEET_NAME = 'Data';
@@ -23,20 +25,40 @@ function doGet(e) {
     return getData(gp);
   }
   
-  return ContentService.createTextOutput(JSON.stringify({ error: 'Invalid Action' }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return createJsonResponse({ error: 'Invalid Action' });
 }
 
 function doPost(e) {
-  const data = JSON.parse(e.postData.contents);
-  const action = data.action;
-  
-  if (action === 'updateData') {
-    return updateData(data);
+  try {
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    
+    if (action === 'updateData') {
+      return updateData(data);
+    }
+    return createJsonResponse({ error: 'Invalid Action' });
+  } catch (err) {
+    return createJsonResponse({ error: err.toString() });
   }
+}
 
-  return ContentService.createTextOutput(JSON.stringify({ error: 'Invalid Action' }))
+function createJsonResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Robustly finds a column index by header name (case-insensitive, trimmed)
+ */
+function findColumnIndex(headers, targetName) {
+  const normalizedTarget = targetName.toLowerCase().replace(/\s/g, '');
+  for (let i = 0; i < headers.length; i++) {
+    const normalizedHeader = String(headers[i]).toLowerCase().replace(/\s/g, '');
+    if (normalizedHeader.includes(normalizedTarget)) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 /**
@@ -44,35 +66,40 @@ function doPost(e) {
  */
 function getGPs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(GP_SHEET_NAME);
+  let sheet = ss.getSheetByName(GP_SHEET_NAME);
   
+  // Fallback to Data sheet if GramPanchayat sheet doesn't exist
   if (!sheet) {
-    return ContentService.createTextOutput(JSON.stringify({ 
-      data: [], 
-      error: `Sheet named "${GP_SHEET_NAME}" not found.` 
-    })).setMimeType(ContentService.MimeType.JSON);
+    sheet = ss.getSheetByName(DATA_SHEET_NAME);
+  }
+
+  if (!sheet) {
+    return createJsonResponse({ data: [], error: 'No sheet found to fetch GPs' });
   }
 
   const rows = sheet.getDataRange().getValues();
-  if (rows.length < 1) {
-    return ContentService.createTextOutput(JSON.stringify({ data: [] }))
-      .setMimeType(ContentService.MimeType.JSON);
+  if (rows.length < 2) {
+    return createJsonResponse({ data: [] });
+  }
+
+  const headers = rows[0];
+  let gpColIndex = findColumnIndex(headers, 'GramPanchayat');
+  
+  // If not found, default to first column if it's the specific GP sheet, 
+  // or second column if it's the Data sheet
+  if (gpColIndex === -1) {
+    gpColIndex = sheet.getName() === GP_SHEET_NAME ? 0 : 1;
   }
 
   const gps = new Set();
-  const headers = rows[0];
-  const gpColIndex = headers.indexOf('GramPanchayat');
-  
-  // Use the column with header "GramPanchayat", otherwise default to the first column
-  const indexToUse = gpColIndex !== -1 ? gpColIndex : 0;
-
   for (let i = 1; i < rows.length; i++) {
-    const val = rows[i][indexToUse];
-    if (val) gps.add(String(val).trim());
+    const val = rows[i][gpColIndex];
+    if (val && String(val).trim() !== "") {
+      gps.add(String(val).trim());
+    }
   }
   
-  return ContentService.createTextOutput(JSON.stringify({ data: Array.from(gps).sort() }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return createJsonResponse({ data: Array.from(gps).sort() });
 }
 
 /**
@@ -82,32 +109,43 @@ function getData(filterGp) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName(DATA_SHEET_NAME);
   if (!sheet) {
-    return ContentService.createTextOutput(JSON.stringify({ data: [], error: 'Data sheet not found' }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return createJsonResponse({ data: [], error: 'Data sheet not found' });
   }
 
   const rows = sheet.getDataRange().getValues();
+  if (rows.length < 1) return createJsonResponse({ data: [] });
+
+  const headers = rows[0];
+  const gpIdx = findColumnIndex(headers, 'GramPanchayat') || 1;
+  const studentNameIdx = findColumnIndex(headers, 'StudentName') || 2;
+  const fatherNameIdx = findColumnIndex(headers, 'FatherName') || 3;
+  const aadhaarIdx = findColumnIndex(headers, 'Aadhaar') || 4;
+  const dobIdx = findColumnIndex(headers, 'DOB') || 5;
+  const ageIdx = findColumnIndex(headers, 'Age') || 6;
+  const mobileIdx = findColumnIndex(headers, 'Mobile') || 7;
+  const genderIdx = findColumnIndex(headers, 'gender') || 8;
+  const zeroPovertyIdx = findColumnIndex(headers, 'ZEROPUVERTY') || 9;
+
   const data = [];
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    const currentGp = String(row[1]);
+    const currentGp = String(row[gpIdx]).trim();
     
-    // If filterGp is provided, only include matching rows
     if (filterGp && currentGp !== filterGp) continue;
 
     data.push({
       rowIndex: i + 1,
       familyId: String(row[0]),
       gramPanchayat: currentGp,
-      studentName: String(row[2]),
-      fatherName: String(row[3]),
-      aadhaar: String(row[4]),
-      dob: String(row[5]),
-      age: row[6],
-      mobile: String(row[7]),
-      gender: String(row[8]),
-      zeroPovertyId: String(row[9]),
+      studentName: String(row[studentNameIdx]),
+      fatherName: String(row[fatherNameIdx]),
+      aadhaar: String(row[aadhaarIdx]),
+      dob: String(row[dobIdx]),
+      age: row[ageIdx],
+      mobile: String(row[mobileIdx]),
+      gender: String(row[genderIdx]),
+      zeroPovertyId: String(row[zeroPovertyIdx]),
       ineligibleReason: String(row[10] || ''),
       alreadyEnrolled: String(row[11] || ''),
       prevSchoolType: String(row[12] || ''),
@@ -118,8 +156,7 @@ function getData(filterGp) {
     });
   }
 
-  return ContentService.createTextOutput(JSON.stringify({ data: data }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return createJsonResponse({ data: data });
 }
 
 /**
@@ -130,7 +167,7 @@ function updateData(data) {
   const sheet = ss.getSheetByName(DATA_SHEET_NAME);
   const rowIndex = data.rowIndex;
 
-  if (!rowIndex) return ContentService.createTextOutput("Error: No row index").setMimeType(ContentService.MimeType.TEXT);
+  if (!rowIndex) return createJsonResponse({ error: "No row index provided" });
 
   sheet.getRange(rowIndex, 11).setValue(data.ineligibleReason);
   sheet.getRange(rowIndex, 12).setValue(data.alreadyEnrolled);
@@ -147,6 +184,5 @@ function updateData(data) {
   newUdiseCell.setNumberFormat("@");
   newUdiseCell.setValue(data.newUdiseCode);
 
-  return ContentService.createTextOutput(JSON.stringify({ success: true }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return createJsonResponse({ success: true });
 }

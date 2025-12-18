@@ -1,18 +1,27 @@
 
 import { StudentData } from '../types';
 
-// The URL provided by the user. 
-// IMPORTANT: Ensure this is the "Web App" URL ending in /exec for production.
+// IMPORTANT: Use your deployed Web App URL (ends in /exec).
+// The library URL below will NOT work for fetching data directly.
 const GAS_WEB_APP_URL = 'https://script.google.com/macros/library/d/1q1DEMu-YXseEotsk3eMYXph1Vbvo7b8CPvMNoRyA_wiD4Da60Hgoyvx6/2';
 
 export const fetchGramPanchayats = async (): Promise<string[]> => {
   try {
+    if (GAS_WEB_APP_URL.includes('/library/')) {
+      throw new Error('Using Library URL instead of Web App URL');
+    }
+
     const response = await fetch(`${GAS_WEB_APP_URL}?action=getGPs`);
     if (!response.ok) throw new Error('Failed to fetch Gram Panchayats');
     const result = await response.json();
+    
+    if (result.error) {
+      console.warn('GAS Script Error:', result.error);
+    }
+    
     return result.data || [];
   } catch (error) {
-    console.error('Error fetching GPs:', error);
+    console.error('Error fetching GPs (Falling back to mock data):', error);
     // Extract unique GPs from mock data for preview
     const unique = new Set(mockData.map(d => d.gramPanchayat));
     return Array.from(unique).sort();
@@ -21,6 +30,10 @@ export const fetchGramPanchayats = async (): Promise<string[]> => {
 
 export const fetchAllData = async (gp?: string): Promise<StudentData[]> => {
   try {
+    if (GAS_WEB_APP_URL.includes('/library/')) {
+      throw new Error('Using Library URL instead of Web App URL');
+    }
+
     let url = `${GAS_WEB_APP_URL}?action=getData`;
     if (gp) url += `&gp=${encodeURIComponent(gp)}`;
     
@@ -29,13 +42,18 @@ export const fetchAllData = async (gp?: string): Promise<StudentData[]> => {
     const result = await response.json();
     return result.data || [];
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching data (Falling back to mock data):', error);
     return gp ? mockData.filter(d => d.gramPanchayat === gp) : mockData;
   }
 };
 
 export const updateStudent = async (data: Partial<StudentData>): Promise<boolean> => {
   try {
+    if (GAS_WEB_APP_URL.includes('/library/')) {
+      console.error('Cannot update: Using Library URL');
+      return false;
+    }
+
     await fetch(GAS_WEB_APP_URL, {
       method: 'POST',
       mode: 'no-cors',
