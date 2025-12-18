@@ -8,7 +8,8 @@
  * 5. Execute as: Me, Who has access: Anyone.
  */
 
-const SHEET_NAME = 'Data';
+const DATA_SHEET_NAME = 'Data';
+const GP_SHEET_NAME = 'GramPanchayat';
 
 function doGet(e) {
   const action = e.parameter.action;
@@ -38,24 +39,53 @@ function doPost(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Fetches the list of Gram Panchayats from the sheet named "GramPanchayat"
+ */
 function getGPs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const rows = sheet.getDataRange().getValues();
-  const gps = new Set();
+  const sheet = ss.getSheetByName(GP_SHEET_NAME);
   
-  // Column 1 is GramPanchayat
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      data: [], 
+      error: `Sheet named "${GP_SHEET_NAME}" not found.` 
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length < 1) {
+    return ContentService.createTextOutput(JSON.stringify({ data: [] }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  const gps = new Set();
+  const headers = rows[0];
+  const gpColIndex = headers.indexOf('GramPanchayat');
+  
+  // Use the column with header "GramPanchayat", otherwise default to the first column
+  const indexToUse = gpColIndex !== -1 ? gpColIndex : 0;
+
   for (let i = 1; i < rows.length; i++) {
-    if (rows[i][1]) gps.add(String(rows[i][1]));
+    const val = rows[i][indexToUse];
+    if (val) gps.add(String(val).trim());
   }
   
   return ContentService.createTextOutput(JSON.stringify({ data: Array.from(gps).sort() }))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Fetches student data from the "Data" sheet
+ */
 function getData(filterGp) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
+  const sheet = ss.getSheetByName(DATA_SHEET_NAME);
+  if (!sheet) {
+    return ContentService.createTextOutput(JSON.stringify({ data: [], error: 'Data sheet not found' }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   const rows = sheet.getDataRange().getValues();
   const data = [];
 
@@ -92,9 +122,12 @@ function getData(filterGp) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+/**
+ * Updates a student's information in the "Data" sheet
+ */
 function updateData(data) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
+  const sheet = ss.getSheetByName(DATA_SHEET_NAME);
   const rowIndex = data.rowIndex;
 
   if (!rowIndex) return ContentService.createTextOutput("Error: No row index").setMimeType(ContentService.MimeType.TEXT);
