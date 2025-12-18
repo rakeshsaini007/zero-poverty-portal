@@ -109,7 +109,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
         </div>
 
         <div className="w-full md:w-auto flex justify-end md:block pt-4 md:pt-0 border-t md:border-t-0 border-slate-200">
-           <div className={`px-4 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider shadow-sm border ${isExisting ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-900 text-white border-slate-950'}`}>
+           <div className={`px-5 py-3 rounded-xl text-base font-black tracking-wider shadow-sm border text-center ${isExisting ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-slate-900 text-white border-slate-950'}`}>
               {status ? status : 'Status Pending'}
            </div>
         </div>
@@ -146,15 +146,15 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
 
         <div className="space-y-10">
           <div className="space-y-5">
-            <p className="text-[12px] font-black text-slate-950 uppercase tracking-widest flex items-center gap-2">
-              <Star size={16} className="text-indigo-600 fill-indigo-600" /> Update Enrollment Status
+            <p className="text-[14px] font-black text-slate-950 uppercase tracking-[0.1em] flex items-center gap-2">
+              <Star size={18} className="text-indigo-600 fill-indigo-600" /> Update Enrollment Status
             </p>
-            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-4">
+            <div className="flex flex-col sm:grid sm:grid-cols-3 gap-5">
               {[EnrollmentStatus.INELIGIBLE, EnrollmentStatus.ALREADY_ENROLLED, EnrollmentStatus.NEWLY_ENROLLED].map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatus(s)}
-                  className={`px-5 py-5 rounded-xl text-[11px] font-black border-2 transition-all text-center uppercase tracking-wider leading-tight shadow-sm active:scale-95 ${getStatusStyle(s)}`}
+                  className={`px-6 py-6 rounded-xl text-lg font-black border-2 transition-all text-center tracking-tight leading-snug shadow-sm active:scale-95 ${getStatusStyle(s)}`}
                 >
                   {s}
                 </button>
@@ -162,16 +162,16 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             </div>
           </div>
 
-          <div className="min-h-[100px] bg-slate-100 rounded-2xl p-6 sm:p-8 border-2 border-slate-900 shadow-inner">
+          <div className="min-h-[100px] bg-slate-100 rounded-2xl p-6 sm:p-10 border-2 border-slate-900 shadow-inner">
             {status === EnrollmentStatus.INELIGIBLE && (
               <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="block text-[11px] font-black text-slate-950 mb-4 uppercase tracking-wider">Reason for Ineligibility</label>
+                <label className="block text-[14px] font-black text-slate-950 mb-5 uppercase tracking-wider">अपात्रता का कारण चुनें</label>
                 <select
                   value={subField}
                   onChange={(e) => setSubField(e.target.value)}
-                  className="w-full input-dark rounded-xl text-sm font-bold block p-5 outline-none cursor-pointer border-2 border-slate-950"
+                  className="w-full input-dark rounded-xl text-lg font-bold block p-6 outline-none cursor-pointer border-2 border-slate-950"
                 >
-                  <option value="">-- Choose Reason --</option>
+                  <option value="">-- चुनें --</option>
                   {INELIGIBLE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
@@ -180,19 +180,19 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             {(status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED) && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-950 uppercase tracking-wider">School Type</label>
+                  <label className="text-[13px] font-black text-slate-950 uppercase tracking-wider">विद्यालय का प्रकार</label>
                   <select
                     value={schoolType}
                     onChange={(e) => setSchoolType(e.target.value as SchoolType)}
-                    className="w-full input-dark rounded-xl text-sm font-bold block p-5 outline-none border-2 border-slate-950"
+                    className="w-full input-dark rounded-xl text-base font-bold block p-5 outline-none border-2 border-slate-950"
                   >
-                    <option value="">-- Type --</option>
+                    <option value="">-- चुनें --</option>
                     <option value="Government">Government</option>
                     <option value="Private">Private</option>
                   </select>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-950 uppercase tracking-wider">Scholar No</label>
+                  <label className="text-[13px] font-black text-slate-950 uppercase tracking-wider">स्कॉलर रजिस्टर नंबर</label>
                   <div className="relative">
                     <Bookmark size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-900" />
                     <input
@@ -200,21 +200,21 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                       placeholder="Reg Number"
                       value={scholarNo}
                       onChange={(e) => setScholarNo(e.target.value)}
-                      className="w-full input-dark rounded-xl text-sm font-bold block p-5 pl-12 outline-none border-2 border-slate-950"
+                      className="w-full input-dark rounded-xl text-base font-bold block p-5 pl-12 outline-none border-2 border-slate-950"
                     />
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[11px] font-black text-slate-950 uppercase tracking-wider">UDISE Code</label>
+                  <label className="text-[13px] font-black text-slate-950 uppercase tracking-wider">विद्यालय का यूडायस कोड</label>
                   <div className="relative">
                     <GraduationCap size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-900" />
                     <input
                       type="text"
-                      placeholder="e.g. 0905..."
+                      placeholder="0905..."
                       value={udiseCode}
                       maxLength={11}
                       onChange={(e) => setUdiseCode(e.target.value.replace(/\D/g, ''))}
-                      className="w-full input-dark rounded-xl text-sm font-mono font-bold tracking-widest block p-5 pl-12 outline-none border-2 border-slate-950"
+                      className="w-full input-dark rounded-xl text-base font-mono font-bold tracking-widest block p-5 pl-12 outline-none border-2 border-slate-950"
                     />
                   </div>
                 </div>
@@ -224,7 +224,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             {!status && (
               <div className="flex flex-col items-center justify-center py-6 text-slate-600">
                  <AlertCircle size={32} className="mb-3 opacity-30" />
-                 <p className="text-[11px] font-black uppercase tracking-widest">Awaiting Status Configuration</p>
+                 <p className="text-[13px] font-black uppercase tracking-widest">Awaiting Status Configuration</p>
               </div>
             )}
           </div>
@@ -234,7 +234,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className={`w-full sm:w-auto px-14 py-6 rounded-2xl font-black text-sm uppercase tracking-[0.2em] text-white transition-all active:scale-95 disabled:opacity-50 shadow-2xl ${
+                className={`w-full sm:w-auto px-14 py-6 rounded-2xl font-black text-base uppercase tracking-[0.2em] text-white transition-all active:scale-95 disabled:opacity-50 shadow-2xl ${
                   isExisting ? 'bg-slate-950 hover:bg-black' : 'bg-indigo-600 hover:bg-indigo-700'
                 }`}
               >
@@ -246,7 +246,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                 ) : (
                   <div className="flex items-center gap-3">
                     {isExisting ? 'Update Record' : 'Submit Entry'}
-                    <ChevronRight size={22} />
+                    <ChevronRight size={24} />
                   </div>
                 )}
               </button>
