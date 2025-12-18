@@ -3,7 +3,7 @@ import { StudentData } from '../types';
 
 // IMPORTANT: Use your deployed Web App URL (ends in /exec).
 // The library URL below will NOT work for fetching data directly.
-const GAS_WEB_APP_URL = 'https://script.google.com/macros/library/d/1q1DEMu-YXseEotsk3eMYXph1Vbvo7b8CPvMNoRyA_wiD4Da60Hgoyvx6/2';
+const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbxAL8ElKblOhMEVus9UBCDE5vaifsnIKdoH_-kvewkVELTWzF0k3iAZnO2RTNMsGwlzlA/exec';
 
 export const fetchGramPanchayats = async (): Promise<string[]> => {
   try {
