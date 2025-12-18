@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudentData, EnrollmentStatus, INELIGIBLE_REASONS, SchoolType } from '../types';
-import { User, ShieldCheck, MapPin, Phone, Calendar, Hash, ChevronRight, CheckCircle2, AlertCircle, Bookmark } from 'lucide-react';
+import { User, ShieldCheck, MapPin, Phone, Calendar, Hash, ChevronRight, CheckCircle2, AlertCircle, Bookmark, GraduationCap } from 'lucide-react';
 
 interface StudentFormProps {
   student: StudentData;
@@ -43,7 +43,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   const handleSave = async () => {
     if (!status) return;
 
-    // Validation
     if ((status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED)) {
       if (!scholarNo.trim()) {
         alert('कृपया स्कॉलर रजिस्टर नंबर दर्ज करें।');
@@ -100,6 +99,9 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
     }
   };
 
+  // Get current active scholar ID if exists
+  const displayScholarId = student.prevScholarNo || student.newScholarNo || 'Not Set';
+
   return (
     <div className={`group relative bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden ${isExisting ? 'ring-2 ring-emerald-500/20' : ''}`}>
       <div className={`absolute top-0 left-0 w-1.5 h-full transition-colors duration-500 ${isExisting ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
@@ -134,12 +136,13 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
       </div>
 
       <div className="p-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+        {/* Info Grid with Scholar ID */}
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
               <ShieldCheck size={12} /> Father's Name
             </p>
-            <p className="text-sm font-semibold text-slate-700">{student.fatherName}</p>
+            <p className="text-sm font-semibold text-slate-700 truncate">{student.fatherName}</p>
           </div>
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -152,6 +155,14 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
               <Phone size={12} /> Contact
             </p>
             <p className="text-sm font-semibold text-slate-700">{student.mobile}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <GraduationCap size={12} /> Scholar ID
+            </p>
+            <p className={`text-sm font-semibold ${displayScholarId !== 'Not Set' ? 'text-indigo-600' : 'text-slate-400'}`}>
+              {displayScholarId}
+            </p>
           </div>
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -206,7 +217,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             )}
 
             {(status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED) && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="space-y-3">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">School Type</label>
                   <select

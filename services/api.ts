@@ -81,14 +81,12 @@ const mockData: StudentData[] = [
     gender: "F",
     zeroPovertyId: "2015483",
     ineligibleReason: "",
-    alreadyEnrolled: "",
-    prevSchoolType: "",
-    // Fix: Added missing required property prevScholarNo
-    prevScholarNo: "",
-    prevUdiseCode: "",
+    alreadyEnrolled: "Yes",
+    prevSchoolType: "Government",
+    prevScholarNo: "SR-9925-A",
+    prevUdiseCode: "09050304701",
     newlyEnrolled: "",
     newSchoolType: "",
-    // Fix: Added missing required property newScholarNo
     newScholarNo: "",
     newUdiseCode: ""
   },
@@ -107,13 +105,11 @@ const mockData: StudentData[] = [
     ineligibleReason: "",
     alreadyEnrolled: "",
     prevSchoolType: "",
-    // Fix: Added missing required property prevScholarNo
     prevScholarNo: "",
     prevUdiseCode: "",
-    newlyEnrolled: "",
-    newSchoolType: "",
-    // Fix: Added missing required property newScholarNo
-    newScholarNo: "",
-    newUdiseCode: ""
+    newlyEnrolled: "Yes",
+    newSchoolType: "Private",
+    newScholarNo: "SR-6615-X",
+    newUdiseCode: "09050304702"
   }
 ];
