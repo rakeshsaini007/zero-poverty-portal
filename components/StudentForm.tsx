@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StudentData, EnrollmentStatus, INELIGIBLE_REASONS, SchoolType } from '../types';
 
 interface StudentFormProps {
@@ -8,16 +8,36 @@ interface StudentFormProps {
 }
 
 const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
+  // Determine if this student already has data filled in the sheet
+  const isExisting = !!(student.ineligibleReason || student.alreadyEnrolled || student.newlyEnrolled);
+
   const [status, setStatus] = useState<EnrollmentStatus | null>(
     student.ineligibleReason ? EnrollmentStatus.INELIGIBLE :
     student.alreadyEnrolled ? EnrollmentStatus.ALREADY_ENROLLED :
     student.newlyEnrolled ? EnrollmentStatus.NEWLY_ENROLLED : null
   );
+  
   const [subField, setSubField] = useState<string>(student.ineligibleReason || '');
   const [schoolType, setSchoolType] = useState<SchoolType>((student.prevSchoolType || student.newSchoolType || '') as SchoolType);
   const [udiseCode, setUdiseCode] = useState<string>(student.prevUdiseCode || student.newUdiseCode || '');
   const [loading, setLoading] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [savedLocally, setSavedLocally] = useState(false);
+
+  // Sync state if student prop changes (e.g. after update)
+  useEffect(() => {
+    if (student.ineligibleReason) {
+      setStatus(EnrollmentStatus.INELIGIBLE);
+      setSubField(student.ineligibleReason);
+    } else if (student.alreadyEnrolled) {
+      setStatus(EnrollmentStatus.ALREADY_ENROLLED);
+      setSchoolType(student.prevSchoolType as SchoolType);
+      setUdiseCode(student.prevUdiseCode);
+    } else if (student.newlyEnrolled) {
+      setStatus(EnrollmentStatus.NEWLY_ENROLLED);
+      setSchoolType(student.newSchoolType as SchoolType);
+      setUdiseCode(student.newUdiseCode);
+    }
+  }, [student]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -52,20 +72,37 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
       return;
     }
 
-    await onUpdate(updatePayload);
-    setLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      await onUpdate(updatePayload);
+      const message = isExisting 
+        ? `छात्र ${student.studentName} का डाटा सफलतापूर्वक अपडेट किया गया!` 
+        : `छात्र ${student.studentName} का डाटा सफलतापूर्वक सुरक्षित किया गया!`;
+      
+      alert(message);
+      setSavedLocally(true);
+      setTimeout(() => setSavedLocally(false), 3000);
+    } catch (err) {
+      alert("डाटा सुरक्षित करने में त्रुटि आई। कृपया पुनः प्रयास करें।");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mb-6 transition-all hover:shadow-md">
-      <div className="bg-indigo-600 px-6 py-4 flex justify-between items-center">
-        <h3 className="text-xl font-bold text-white uppercase tracking-wider">
-          {student.studentName}
-        </h3>
-        <span className="bg-indigo-500 text-indigo-50 text-xs font-semibold px-3 py-1 rounded-full">
-          ID: {student.zeroPovertyId}
+    <div className={`bg-white border ${isExisting ? 'border-green-200 shadow-green-50' : 'border-slate-200'} rounded-2xl shadow-sm overflow-hidden mb-6 transition-all hover:shadow-md`}>
+      <div className={`${isExisting ? 'bg-green-600' : 'bg-indigo-600'} px-6 py-4 flex justify-between items-center transition-colors`}>
+        <div className="flex items-center gap-3">
+          <h3 className="text-xl font-bold text-white uppercase tracking-wider">
+            {student.studentName || 'N/A'}
+          </h3>
+          {isExisting && (
+            <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase">
+              नामांकित / संसाधित
+            </span>
+          )}
+        </div>
+        <span className={`${isExisting ? 'bg-green-500' : 'bg-indigo-500'} text-white text-xs font-semibold px-3 py-1 rounded-full`}>
+          Family ID: {student.familyId || 'N/A'}
         </span>
       </div>
 
@@ -74,7 +111,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
           <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Father's Name</p><p className="text-slate-900 font-medium">{student.fatherName}</p></div>
           <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Aadhaar</p><p className="text-slate-900 font-medium">{student.aadhaar}</p></div>
           <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Age / Gender</p><p className="text-slate-900 font-medium">{student.age} yrs / {student.gender}</p></div>
-          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Mobile</p><p className="text-slate-900 font-medium">{student.mobile}</p></div>
+          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Portal ID</p><p className="text-slate-900 font-medium">{student.zeroPovertyId || 'N/A'}</p></div>
         </div>
 
         <div className="space-y-6">
@@ -88,11 +125,13 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                 key={s}
                 onClick={() => {
                   setStatus(s);
-                  setSaved(false);
+                  setSavedLocally(false);
                 }}
                 className={`px-4 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
                   status === s
-                    ? 'bg-indigo-50 border-indigo-600 text-indigo-700'
+                    ? isExisting 
+                      ? 'bg-green-50 border-green-600 text-green-700'
+                      : 'bg-indigo-50 border-indigo-600 text-indigo-700'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                 }`}
               >
@@ -152,13 +191,22 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                 onClick={handleSave}
                 disabled={loading}
                 className={`px-8 py-2.5 rounded-xl font-bold text-white shadow-lg transition-all ${
-                  loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 active:scale-95'
+                  loading 
+                    ? 'bg-slate-400 cursor-not-allowed' 
+                    : isExisting 
+                      ? 'bg-blue-600 hover:bg-blue-700 active:scale-95'
+                      : 'bg-green-600 hover:bg-green-700 active:scale-95'
                 }`}
               >
-                {loading ? 'सहेजा जा रहा है...' : 'डाटा सुरक्षित करें'}
+                {loading 
+                  ? 'सहेजा जा रहा है...' 
+                  : isExisting 
+                    ? 'डाटा अपडेट करें' 
+                    : 'डाटा सुरक्षित करें'
+                }
               </button>
-              {saved && (
-                <span className="text-green-600 font-semibold animate-bounce">✓ सफलतापूर्वक सुरक्षित किया गया</span>
+              {savedLocally && (
+                <span className="text-green-600 font-semibold animate-bounce">✓ सफलतापूर्वक सुरक्षित</span>
               )}
             </div>
           )}

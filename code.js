@@ -116,36 +116,37 @@ function getData(filterGp) {
   if (rows.length < 1) return createJsonResponse({ data: [] });
 
   const headers = rows[0];
-  const gpIdx = findColumnIndex(headers, 'GramPanchayat') || 1;
-  const studentNameIdx = findColumnIndex(headers, 'StudentName') || 2;
-  const fatherNameIdx = findColumnIndex(headers, 'FatherName') || 3;
-  const aadhaarIdx = findColumnIndex(headers, 'Aadhaar') || 4;
-  const dobIdx = findColumnIndex(headers, 'DOB') || 5;
-  const ageIdx = findColumnIndex(headers, 'Age') || 6;
-  const mobileIdx = findColumnIndex(headers, 'Mobile') || 7;
-  const genderIdx = findColumnIndex(headers, 'gender') || 8;
-  const zeroPovertyIdx = findColumnIndex(headers, 'ZEROPUVERTY') || 9;
+  const familyIdIdx = findColumnIndex(headers, 'FamilyId') !== -1 ? findColumnIndex(headers, 'FamilyId') : 0;
+  const gpIdx = findColumnIndex(headers, 'GramPanchayat') !== -1 ? findColumnIndex(headers, 'GramPanchayat') : 1;
+  const studentNameIdx = findColumnIndex(headers, 'StudentName') !== -1 ? findColumnIndex(headers, 'StudentName') : 2;
+  const fatherNameIdx = findColumnIndex(headers, 'FatherName') !== -1 ? findColumnIndex(headers, 'FatherName') : 3;
+  const aadhaarIdx = findColumnIndex(headers, 'Aadhaar') !== -1 ? findColumnIndex(headers, 'Aadhaar') : 4;
+  const dobIdx = findColumnIndex(headers, 'DOB') !== -1 ? findColumnIndex(headers, 'DOB') : 5;
+  const ageIdx = findColumnIndex(headers, 'Age') !== -1 ? findColumnIndex(headers, 'Age') : 6;
+  const mobileIdx = findColumnIndex(headers, 'Mobile') !== -1 ? findColumnIndex(headers, 'Mobile') : 7;
+  const genderIdx = findColumnIndex(headers, 'gender') !== -1 ? findColumnIndex(headers, 'gender') : 8;
+  const zeroPovertyIdx = findColumnIndex(headers, 'ZEROPUVERTY') !== -1 ? findColumnIndex(headers, 'ZEROPUVERTY') : 9;
 
   const data = [];
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
-    const currentGp = String(row[gpIdx]).trim();
+    const currentGp = String(row[gpIdx] || '').trim();
     
     if (filterGp && currentGp !== filterGp) continue;
 
     data.push({
       rowIndex: i + 1,
-      familyId: String(row[0]),
+      familyId: row[familyIdIdx] ? String(row[familyIdIdx]) : '',
       gramPanchayat: currentGp,
-      studentName: String(row[studentNameIdx]),
-      fatherName: String(row[fatherNameIdx]),
-      aadhaar: String(row[aadhaarIdx]),
-      dob: String(row[dobIdx]),
-      age: row[ageIdx],
-      mobile: String(row[mobileIdx]),
-      gender: String(row[genderIdx]),
-      zeroPovertyId: String(row[zeroPovertyIdx]),
+      studentName: row[studentNameIdx] ? String(row[studentNameIdx]) : '',
+      fatherName: row[fatherNameIdx] ? String(row[fatherNameIdx]) : '',
+      aadhaar: row[aadhaarIdx] ? String(row[aadhaarIdx]) : '',
+      dob: row[dobIdx] ? String(row[dobIdx]) : '',
+      age: row[ageIdx] || 0,
+      mobile: row[mobileIdx] ? String(row[mobileIdx]) : '',
+      gender: row[genderIdx] ? String(row[genderIdx]) : '',
+      zeroPovertyId: row[zeroPovertyIdx] ? String(row[zeroPovertyIdx]) : '',
       ineligibleReason: String(row[10] || ''),
       alreadyEnrolled: String(row[11] || ''),
       prevSchoolType: String(row[12] || ''),
@@ -169,20 +170,20 @@ function updateData(data) {
 
   if (!rowIndex) return createJsonResponse({ error: "No row index provided" });
 
-  sheet.getRange(rowIndex, 11).setValue(data.ineligibleReason);
-  sheet.getRange(rowIndex, 12).setValue(data.alreadyEnrolled);
-  sheet.getRange(rowIndex, 13).setValue(data.prevSchoolType);
+  sheet.getRange(rowIndex, 11).setValue(data.ineligibleReason || "");
+  sheet.getRange(rowIndex, 12).setValue(data.alreadyEnrolled || "");
+  sheet.getRange(rowIndex, 13).setValue(data.prevSchoolType || "");
   
   const prevUdiseCell = sheet.getRange(rowIndex, 14);
   prevUdiseCell.setNumberFormat("@");
-  prevUdiseCell.setValue(data.prevUdiseCode);
+  prevUdiseCell.setValue(data.prevUdiseCode || "");
 
-  sheet.getRange(rowIndex, 15).setValue(data.newlyEnrolled);
-  sheet.getRange(rowIndex, 16).setValue(data.newSchoolType);
+  sheet.getRange(rowIndex, 15).setValue(data.newlyEnrolled || "");
+  sheet.getRange(rowIndex, 16).setValue(data.newSchoolType || "");
   
   const newUdiseCell = sheet.getRange(rowIndex, 17);
   newUdiseCell.setNumberFormat("@");
-  newUdiseCell.setValue(data.newUdiseCode);
+  newUdiseCell.setValue(data.newUdiseCode || "");
 
   return createJsonResponse({ success: true });
 }

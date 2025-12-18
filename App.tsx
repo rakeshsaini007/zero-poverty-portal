@@ -39,11 +39,19 @@ const App: React.FC = () => {
   }, [selectedPanchayat]);
 
   const filteredStudents = useMemo(() => {
+    const q = searchQuery.toLowerCase();
     return students.filter(student => {
-      const matchSearch = !searchQuery || 
-        student.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.zeroPovertyId.includes(searchQuery);
-      return matchSearch;
+      if (!q) return true;
+      
+      const name = (student.studentName || '').toLowerCase();
+      const familyId = (student.familyId || '').toLowerCase();
+      const portalId = (student.zeroPovertyId || '').toLowerCase();
+      const father = (student.fatherName || '').toLowerCase();
+      
+      return name.includes(q) || 
+             familyId.includes(q) || 
+             portalId.includes(q) ||
+             father.includes(q);
     });
   }, [students, searchQuery]);
 
@@ -90,7 +98,7 @@ const App: React.FC = () => {
               <div className="relative">
                 <input 
                   type="text" 
-                  placeholder="नाम से खोजें..."
+                  placeholder="नाम या ID से खोजें..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="bg-indigo-800 border-indigo-500 text-white text-sm rounded-lg focus:ring-white focus:border-white block w-full md:w-64 p-2.5 pl-10 outline-none placeholder:text-indigo-300"
