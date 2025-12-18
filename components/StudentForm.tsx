@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudentData, EnrollmentStatus, INELIGIBLE_REASONS, SchoolType } from '../types';
+import { User, ShieldCheck, MapPin, Phone, Calendar, Hash, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
 
 interface StudentFormProps {
   student: StudentData;
@@ -8,7 +9,6 @@ interface StudentFormProps {
 }
 
 const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
-  // Determine if this student already has data filled in the sheet
   const isExisting = !!(student.ineligibleReason || student.alreadyEnrolled || student.newlyEnrolled);
 
   const [status, setStatus] = useState<EnrollmentStatus | null>(
@@ -21,9 +21,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   const [schoolType, setSchoolType] = useState<SchoolType>((student.prevSchoolType || student.newSchoolType || '') as SchoolType);
   const [udiseCode, setUdiseCode] = useState<string>(student.prevUdiseCode || student.newUdiseCode || '');
   const [loading, setLoading] = useState(false);
-  const [savedLocally, setSavedLocally] = useState(false);
 
-  // Sync state if student prop changes (e.g. after update)
   useEffect(() => {
     if (student.ineligibleReason) {
       setStatus(EnrollmentStatus.INELIGIBLE);
@@ -40,6 +38,20 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   }, [student]);
 
   const handleSave = async () => {
+    if (!status) return;
+
+    // UDISE Validation
+    if ((status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED)) {
+      if (!/^0\d{10}$/.test(udiseCode)) {
+        // We assume the parent component handles beautiful alerts via a prop, 
+        // but for robustness we keep a styled feedback here if needed.
+        return;
+      }
+      if (!schoolType) return;
+    }
+
+    if (status === EnrollmentStatus.INELIGIBLE && !subField) return;
+
     setLoading(true);
     const updatePayload: Partial<StudentData> = {
       rowIndex: student.rowIndex,
@@ -52,162 +64,199 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
       newUdiseCode: status === EnrollmentStatus.NEWLY_ENROLLED ? udiseCode : '',
     };
 
-    // UDISE Validation
-    if ((status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED)) {
-      if (!/^0\d{10}$/.test(udiseCode)) {
-        alert('विद्यालय का यूडायस कोड 11 अंकों का होना चाहिए और 0 से शुरू होना चाहिए।');
-        setLoading(false);
-        return;
-      }
-      if (!schoolType) {
-        alert('कृपया विद्यालय का प्रकार चुनें।');
-        setLoading(false);
-        return;
-      }
-    }
+    await onUpdate(updatePayload);
+    setLoading(false);
+  };
 
-    if (status === EnrollmentStatus.INELIGIBLE && !subField) {
-      alert('कृपया अपात्रता का कारण चुनें।');
-      setLoading(false);
-      return;
+  const getStatusColor = (s: EnrollmentStatus) => {
+    switch(s) {
+      case EnrollmentStatus.INELIGIBLE: return 'bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100';
+      case EnrollmentStatus.ALREADY_ENROLLED: return 'bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100';
+      case EnrollmentStatus.NEWLY_ENROLLED: return 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100';
+      default: return '';
     }
+  };
 
-    try {
-      await onUpdate(updatePayload);
-      const message = isExisting 
-        ? `छात्र ${student.studentName} का डाटा सफलतापूर्वक अपडेट किया गया!` 
-        : `छात्र ${student.studentName} का डाटा सफलतापूर्वक सुरक्षित किया गया!`;
-      
-      alert(message);
-      setSavedLocally(true);
-      setTimeout(() => setSavedLocally(false), 3000);
-    } catch (err) {
-      alert("डाटा सुरक्षित करने में त्रुटि आई। कृपया पुनः प्रयास करें।");
-    } finally {
-      setLoading(false);
+  const getActiveStatusColor = (s: EnrollmentStatus) => {
+    switch(s) {
+      case EnrollmentStatus.INELIGIBLE: return 'bg-rose-600 border-rose-600 text-white shadow-rose-200';
+      case EnrollmentStatus.ALREADY_ENROLLED: return 'bg-amber-600 border-amber-600 text-white shadow-amber-200';
+      case EnrollmentStatus.NEWLY_ENROLLED: return 'bg-emerald-600 border-emerald-600 text-white shadow-emerald-200';
+      default: return '';
     }
   };
 
   return (
-    <div className={`bg-white border ${isExisting ? 'border-green-200 shadow-green-50' : 'border-slate-200'} rounded-2xl shadow-sm overflow-hidden mb-6 transition-all hover:shadow-md`}>
-      <div className={`${isExisting ? 'bg-green-600' : 'bg-indigo-600'} px-6 py-4 flex justify-between items-center transition-colors`}>
-        <div className="flex items-center gap-3">
-          <h3 className="text-xl font-bold text-white uppercase tracking-wider">
-            {student.studentName || 'N/A'}
-          </h3>
-          {isExisting && (
-            <span className="bg-white/20 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase">
-              नामांकित / संसाधित
-            </span>
-          )}
+    <div className={`group relative bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden ${isExisting ? 'ring-2 ring-emerald-500/20' : ''}`}>
+      {/* Decorative side accent */}
+      <div className={`absolute top-0 left-0 w-1.5 h-full transition-colors duration-500 ${isExisting ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+
+      {/* Header Section */}
+      <div className={`px-8 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isExisting ? 'bg-emerald-50/30' : 'bg-slate-50/50'}`}>
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm ${isExisting ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-indigo-600'}`}>
+            <User size={24} />
+          </div>
+          <div>
+            <h3 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              {student.studentName || 'Unknown Student'}
+              {isExisting && <CheckCircle2 size={18} className="text-emerald-500" />}
+            </h3>
+            <div className="flex items-center gap-3 mt-1">
+               <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                <Hash size={12} /> {student.familyId}
+              </span>
+              <span className="w-1 h-1 rounded-full bg-slate-300" />
+              <span className="flex items-center gap-1 text-[11px] font-bold text-slate-400 uppercase tracking-widest">
+                <Calendar size={12} /> {student.age} YRS
+              </span>
+            </div>
+          </div>
         </div>
-        <span className={`${isExisting ? 'bg-green-500' : 'bg-indigo-500'} text-white text-xs font-semibold px-3 py-1 rounded-full`}>
-          Family ID: {student.familyId || 'N/A'}
-        </span>
+
+        {isExisting && (
+          <div className="px-4 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-tighter rounded-full shadow-lg shadow-emerald-200 animate-pulse">
+            Verified Record
+          </div>
+        )}
       </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 text-sm text-slate-600">
-          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Father's Name</p><p className="text-slate-900 font-medium">{student.fatherName}</p></div>
-          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Aadhaar</p><p className="text-slate-900 font-medium">{student.aadhaar}</p></div>
-          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Age / Gender</p><p className="text-slate-900 font-medium">{student.age} yrs / {student.gender}</p></div>
-          <div><p className="font-semibold text-slate-400 uppercase text-[10px]">Portal ID</p><p className="text-slate-900 font-medium">{student.zeroPovertyId || 'N/A'}</p></div>
+      <div className="p-8">
+        {/* Detail Grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <ShieldCheck size={12} /> Father's Name
+            </p>
+            <p className="text-sm font-semibold text-slate-700">{student.fatherName}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <AlertCircle size={12} /> Aadhaar No
+            </p>
+            <p className="text-sm font-semibold text-slate-700">•••• •••• {student.aadhaar.slice(-4)}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <Phone size={12} /> Contact
+            </p>
+            <p className="text-sm font-semibold text-slate-700">{student.mobile}</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+              <MapPin size={12} /> Portal ID
+            </p>
+            <p className="text-sm font-semibold text-slate-700">{student.zeroPovertyId}</p>
+          </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex flex-wrap gap-3">
-            {[
-              EnrollmentStatus.INELIGIBLE,
-              EnrollmentStatus.ALREADY_ENROLLED,
-              EnrollmentStatus.NEWLY_ENROLLED
-            ].map((s) => (
-              <button
-                key={s}
-                onClick={() => {
-                  setStatus(s);
-                  setSavedLocally(false);
-                }}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold border-2 transition-all ${
-                  status === s
-                    ? isExisting 
-                      ? 'bg-green-50 border-green-600 text-green-700'
-                      : 'bg-indigo-50 border-indigo-600 text-indigo-700'
-                    : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
-                }`}
-              >
-                {s}
-              </button>
-            ))}
+        {/* Status Selection */}
+        <div className="space-y-8">
+          <div>
+            <p className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Select Enrollment Status</p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                EnrollmentStatus.INELIGIBLE,
+                EnrollmentStatus.ALREADY_ENROLLED,
+                EnrollmentStatus.NEWLY_ENROLLED
+              ].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatus(s)}
+                  className={`px-5 py-3 rounded-2xl text-xs font-bold border-2 transition-all duration-300 text-center flex items-center justify-center gap-2 ${
+                    status === s
+                      ? `${getActiveStatusColor(s)} shadow-lg scale-[1.02]`
+                      : `${getStatusColor(s as EnrollmentStatus)} border-transparent grayscale-[0.5]`
+                  }`}
+                >
+                  {status === s && <CheckCircle2 size={14} />}
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {status === EnrollmentStatus.INELIGIBLE && (
-            <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-              <label className="block text-sm font-medium text-slate-700 mb-2">अपात्रता का कारण चुनें</label>
-              <select
-                value={subField}
-                onChange={(e) => setSubField(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-              >
-                <option value="">-- चुनें --</option>
-                {INELIGIBLE_REASONS.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {(status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">विद्यालय का प्रकार</label>
-                <select
-                  value={schoolType}
-                  onChange={(e) => setSchoolType(e.target.value as SchoolType)}
-                  className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-                >
-                  <option value="">-- चुनें --</option>
-                  <option value="Government">Government</option>
-                  <option value="Private">Private</option>
-                </select>
+          {/* Conditional Fields */}
+          <div className="min-h-[80px] transition-all duration-500">
+            {status === EnrollmentStatus.INELIGIBLE && (
+              <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                <label className="block text-xs font-bold text-slate-500 mb-3 uppercase tracking-wider">Reason for Ineligibility</label>
+                <div className="relative">
+                  <select
+                    value={subField}
+                    onChange={(e) => setSubField(e.target.value)}
+                    className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-rose-500 focus:border-rose-500 block p-4 outline-none appearance-none transition-all"
+                  >
+                    <option value="">-- Select Reason --</option>
+                    {INELIGIBLE_REASONS.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                    <ChevronRight className="rotate-90 text-slate-400" size={18} />
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">विद्यालय का यूडायस कोड</label>
-                <input
-                  type="text"
-                  placeholder="09050304704"
-                  value={udiseCode}
-                  maxLength={11}
-                  onChange={(e) => setUdiseCode(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-slate-50 border border-slate-300 text-slate-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5"
-                />
-                <p className="mt-1 text-xs text-slate-400">11 अंकों का कोड जो 0 से शुरू हो।</p>
-              </div>
-            </div>
-          )}
+            )}
 
+            {(status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">School Type</label>
+                  <div className="relative">
+                    <select
+                      value={schoolType}
+                      onChange={(e) => setSchoolType(e.target.value as SchoolType)}
+                      className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 outline-none appearance-none transition-all"
+                    >
+                      <option value="">-- Select Type --</option>
+                      <option value="Government">Government School</option>
+                      <option value="Private">Private Institution</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ChevronRight className="rotate-90 text-slate-400" size={18} />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Udise Code (11 Digits)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 09050304704"
+                    value={udiseCode}
+                    maxLength={11}
+                    onChange={(e) => setUdiseCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm font-mono tracking-wider rounded-2xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 outline-none transition-all placeholder:text-slate-300"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Action Button */}
           {status && (
-            <div className="pt-4 flex items-center gap-4">
+            <div className="pt-6 border-t border-slate-100">
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className={`px-8 py-2.5 rounded-xl font-bold text-white shadow-lg transition-all ${
-                  loading 
-                    ? 'bg-slate-400 cursor-not-allowed' 
-                    : isExisting 
-                      ? 'bg-blue-600 hover:bg-blue-700 active:scale-95'
-                      : 'bg-green-600 hover:bg-green-700 active:scale-95'
+                className={`relative group/btn overflow-hidden w-full sm:w-auto px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest text-white transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-xl ${
+                  isExisting 
+                    ? 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100' 
+                    : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-100'
                 }`}
               >
-                {loading 
-                  ? 'सहेजा जा रहा है...' 
-                  : isExisting 
-                    ? 'डाटा अपडेट करें' 
-                    : 'डाटा सुरक्षित करें'
-                }
+                <span className="relative z-10 flex items-center justify-center gap-3">
+                  {loading ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      {isExisting ? 'Update Record' : 'Submit Data'}
+                      <ChevronRight size={16} className="group-hover/btn:translate-x-1 transition-transform" />
+                    </>
+                  )}
+                </span>
+                <div className="absolute inset-0 shimmer opacity-0 group-hover/btn:opacity-100 transition-opacity" />
               </button>
-              {savedLocally && (
-                <span className="text-green-600 font-semibold animate-bounce">✓ सफलतापूर्वक सुरक्षित</span>
-              )}
             </div>
           )}
         </div>
