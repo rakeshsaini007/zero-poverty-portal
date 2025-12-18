@@ -235,7 +235,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                 onClick={handleSave}
                 disabled={loading}
                 className={`w-full sm:w-auto px-14 py-6 rounded-2xl font-black text-base uppercase tracking-[0.2em] text-white transition-all active:scale-95 disabled:opacity-50 shadow-2xl ${
-                  isExisting ? 'bg-slate-950 hover:bg-black' : 'bg-indigo-600 hover:bg-indigo-700'
+                  isExisting ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'
                 }`}
               >
                 {loading ? (
