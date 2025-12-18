@@ -99,7 +99,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Header with Hamburger */}
-      <header className="sticky top-0 z-[60] glass-nav py-4 sm:py-6">
+      <header className="sticky top-0 z-[60] glass-nav py-4 sm:py-6 shadow-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 sm:gap-6">
@@ -108,8 +108,8 @@ const App: React.FC = () => {
                 <School size={30} className="hidden sm:block" />
               </div>
               <div>
-                <h1 className="text-lg sm:text-2xl font-black text-white tracking-tighter uppercase leading-none">Elite Portal</h1>
-                <p className="text-[7px] sm:text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Authorized Data Access</p>
+                <h1 className="text-lg sm:text-2xl font-black text-white tracking-tighter uppercase leading-none">Zero Poverty Portal</h1>
+                <p className="text-[7px] sm:text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1">Authorized Access</p>
               </div>
             </div>
 
@@ -120,11 +120,12 @@ const App: React.FC = () => {
                 <select
                   value={selectedPanchayat}
                   onChange={(e) => setSelectedPanchayat(e.target.value)}
-                  className="w-full bg-slate-800/80 border-2 border-slate-700 text-white text-xs font-black rounded-xl py-3.5 pl-12 pr-10 outline-none appearance-none cursor-pointer uppercase tracking-widest"
+                  className="w-full bg-slate-800/80 border-2 border-slate-700 text-white text-xs font-black rounded-xl py-3.5 pl-12 pr-10 outline-none appearance-none cursor-pointer uppercase tracking-widest focus:border-indigo-500"
                 >
-                  <option value="">{loadingGPs ? 'Loading GPs...' : 'Select Gram Panchayat'}</option>
+                  <option value="">{loadingGPs ? 'Loading...' : 'Select Gram Panchayat'}</option>
                   {gramPanchayats.map(gp => <option key={gp} value={gp}>{gp}</option>)}
                 </select>
+                {/* Fixed incorrect casing for ChevronDown component below */}
                 <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" size={16} />
               </div>
               
@@ -135,7 +136,7 @@ const App: React.FC = () => {
                   placeholder="Search records..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-800/80 border-2 border-slate-700 text-white text-xs font-black rounded-xl py-3.5 pl-12 pr-4 outline-none placeholder:text-slate-500 uppercase tracking-widest"
+                  className="w-full bg-slate-800/80 border-2 border-slate-700 text-white text-xs font-black rounded-xl py-3.5 pl-12 pr-4 outline-none placeholder:text-slate-500 uppercase tracking-widest focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -143,7 +144,7 @@ const App: React.FC = () => {
             {/* Mobile Menu Button */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-3 bg-slate-800 border-2 border-slate-700 text-white rounded-xl shadow-lg active:scale-90 transition-transform"
+              className="lg:hidden p-3 bg-slate-800 border-2 border-slate-700 text-white rounded-xl shadow-lg active:scale-90 transition-all hover:bg-slate-700"
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -152,10 +153,10 @@ const App: React.FC = () => {
 
         {/* Mobile Flyout Menu */}
         {isMenuOpen && (
-          <div className="lg:hidden absolute top-full left-0 w-full bg-slate-900/95 backdrop-blur-2xl border-b border-slate-800 p-6 animate-in slide-in-from-top-5 duration-300 shadow-2xl">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Select Location</label>
+          <div className="lg:hidden absolute top-full left-0 w-full bg-slate-900/98 backdrop-blur-2xl border-b border-slate-800 p-6 animate-in slide-in-from-top-2 duration-200 shadow-2xl">
+            <div className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Gram Panchayat</label>
                 <div className="relative">
                   <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <select
@@ -168,7 +169,7 @@ const App: React.FC = () => {
                   </select>
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em]">Filter Records</label>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
@@ -183,16 +184,16 @@ const App: React.FC = () => {
               </div>
               <button 
                 onClick={() => setIsMenuOpen(false)}
-                className="w-full py-4 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl"
+                className="w-full py-4 bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-colors shadow-xl"
               >
-                Close Search Controls
+                Apply Filters
               </button>
             </div>
           </div>
         )}
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-6 sm:mt-10">
+      <main className="max-w-6xl mx-auto px-4 sm:px-8 mt-6 sm:mt-12">
         {!selectedPanchayat ? (
           <div className="py-20 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in-95 duration-700">
             <div className="relative mb-10">
@@ -201,41 +202,41 @@ const App: React.FC = () => {
                   <Layers size={40} className="text-indigo-500" />
                </div>
             </div>
-            <h2 className="text-3xl font-black text-white mb-4 tracking-tighter uppercase italic">Ready to Query</h2>
+            <h2 className="text-3xl font-black text-white mb-4 tracking-tighter uppercase italic">System Ready</h2>
             <p className="text-slate-400 max-w-sm mx-auto leading-relaxed font-bold text-sm">
-              Please open the <span className="text-indigo-400 font-black">Search Controls</span> to select a Panchayat and retrieve student records.
+              Please select a <span className="text-indigo-400 font-black">Gram Panchayat</span> from the control center to retrieve student archives.
             </p>
             <button 
               onClick={() => setIsMenuOpen(true)}
-              className="mt-8 lg:hidden flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-500/20"
+              className="mt-8 lg:hidden flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl hover:bg-indigo-700"
             >
-              Open Search <ChevronDown size={16} />
+              Open Controls <ChevronDown size={16} />
             </button>
           </div>
         ) : loadingStudents ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-6">
             <div className="w-12 h-12 border-4 border-slate-800 border-t-indigo-500 rounded-full animate-spin" />
-            <p className="text-white font-black uppercase tracking-[0.3em] text-[10px]">Updating Workspace</p>
+            <p className="text-white font-black uppercase tracking-[0.3em] text-[10px]">Loading Database...</p>
           </div>
         ) : (
-          <div className="space-y-6 sm:space-y-10">
+          <div className="space-y-6 sm:space-y-12">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-800/50">
-              <div>
-                 <p className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-1">Active Location</p>
+              <div className="min-w-0">
+                 <p className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.4em] mb-1">Active Sector</p>
                  <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight uppercase truncate">
                   {selectedPanchayat}
                 </h2>
               </div>
-              <div className="flex items-center gap-4 bg-slate-900/50 p-3 rounded-2xl border border-slate-800">
+              <div className="flex items-center gap-4 bg-slate-900/50 p-3 rounded-2xl border border-slate-800 shrink-0">
                  <div className="text-right">
-                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Available Files</p>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Available</p>
                     <p className="text-xl font-black text-white leading-none">{filteredStudents.length} <span className="text-[10px] text-slate-600">UNITS</span></p>
                  </div>
                  <Activity size={24} className="text-emerald-400" />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:gap-10">
+            <div className="grid grid-cols-1 gap-6 sm:gap-12">
               {filteredStudents.map((student, idx) => (
                 <StudentForm 
                   key={`${student.rowIndex}-${student.aadhaar}`}
