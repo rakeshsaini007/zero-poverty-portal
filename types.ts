@@ -14,9 +14,11 @@ export interface StudentData {
   ineligibleReason: string;
   alreadyEnrolled: string;
   prevSchoolType: string;
+  prevScholarNo: string;
   prevUdiseCode: string;
   newlyEnrolled: string;
   newSchoolType: string;
+  newScholarNo: string;
   newUdiseCode: string;
   isProcessed?: boolean;
 }

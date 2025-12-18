@@ -83,9 +83,13 @@ const mockData: StudentData[] = [
     ineligibleReason: "",
     alreadyEnrolled: "",
     prevSchoolType: "",
+    // Fix: Added missing required property prevScholarNo
+    prevScholarNo: "",
     prevUdiseCode: "",
     newlyEnrolled: "",
     newSchoolType: "",
+    // Fix: Added missing required property newScholarNo
+    newScholarNo: "",
     newUdiseCode: ""
   },
   {
@@ -103,9 +107,13 @@ const mockData: StudentData[] = [
     ineligibleReason: "",
     alreadyEnrolled: "",
     prevSchoolType: "",
+    // Fix: Added missing required property prevScholarNo
+    prevScholarNo: "",
     prevUdiseCode: "",
     newlyEnrolled: "",
     newSchoolType: "",
+    // Fix: Added missing required property newScholarNo
+    newScholarNo: "",
     newUdiseCode: ""
   }
 ];

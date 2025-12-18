@@ -68,7 +68,6 @@ function getGPs() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(GP_SHEET_NAME);
   
-  // Fallback to Data sheet if GramPanchayat sheet doesn't exist
   if (!sheet) {
     sheet = ss.getSheetByName(DATA_SHEET_NAME);
   }
@@ -85,8 +84,6 @@ function getGPs() {
   const headers = rows[0];
   let gpColIndex = findColumnIndex(headers, 'GramPanchayat');
   
-  // If not found, default to first column if it's the specific GP sheet, 
-  // or second column if it's the Data sheet
   if (gpColIndex === -1) {
     gpColIndex = sheet.getName() === GP_SHEET_NAME ? 0 : 1;
   }
@@ -150,10 +147,12 @@ function getData(filterGp) {
       ineligibleReason: String(row[10] || ''),
       alreadyEnrolled: String(row[11] || ''),
       prevSchoolType: String(row[12] || ''),
-      prevUdiseCode: String(row[13] || ''),
-      newlyEnrolled: String(row[14] || ''),
-      newSchoolType: String(row[15] || ''),
-      newUdiseCode: String(row[16] || '')
+      prevScholarNo: String(row[13] || ''),
+      prevUdiseCode: String(row[14] || ''),
+      newlyEnrolled: String(row[15] || ''),
+      newSchoolType: String(row[16] || ''),
+      newScholarNo: String(row[17] || ''),
+      newUdiseCode: String(row[18] || '')
     });
   }
 
@@ -170,18 +169,31 @@ function updateData(data) {
 
   if (!rowIndex) return createJsonResponse({ error: "No row index provided" });
 
+  // Column mapping:
+  // 11: Ineligible Reason
+  // 12: Already Enrolled
+  // 13: School Type (Prev)
+  // 14: Scholar Reg No (Prev)
+  // 15: UDISE Code (Prev)
+  // 16: Newly Enrolled
+  // 17: School Type (New)
+  // 18: Scholar Reg No (New)
+  // 19: UDISE Code (New)
+
   sheet.getRange(rowIndex, 11).setValue(data.ineligibleReason || "");
   sheet.getRange(rowIndex, 12).setValue(data.alreadyEnrolled || "");
   sheet.getRange(rowIndex, 13).setValue(data.prevSchoolType || "");
+  sheet.getRange(rowIndex, 14).setValue(data.prevScholarNo || "");
   
-  const prevUdiseCell = sheet.getRange(rowIndex, 14);
+  const prevUdiseCell = sheet.getRange(rowIndex, 15);
   prevUdiseCell.setNumberFormat("@");
   prevUdiseCell.setValue(data.prevUdiseCode || "");
 
-  sheet.getRange(rowIndex, 15).setValue(data.newlyEnrolled || "");
-  sheet.getRange(rowIndex, 16).setValue(data.newSchoolType || "");
+  sheet.getRange(rowIndex, 16).setValue(data.newlyEnrolled || "");
+  sheet.getRange(rowIndex, 17).setValue(data.newSchoolType || "");
+  sheet.getRange(rowIndex, 18).setValue(data.newScholarNo || "");
   
-  const newUdiseCell = sheet.getRange(rowIndex, 17);
+  const newUdiseCell = sheet.getRange(rowIndex, 19);
   newUdiseCell.setNumberFormat("@");
   newUdiseCell.setValue(data.newUdiseCode || "");
 

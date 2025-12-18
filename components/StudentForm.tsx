@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { StudentData, EnrollmentStatus, INELIGIBLE_REASONS, SchoolType } from '../types';
-import { User, ShieldCheck, MapPin, Phone, Calendar, Hash, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User, ShieldCheck, MapPin, Phone, Calendar, Hash, ChevronRight, CheckCircle2, AlertCircle, Bookmark } from 'lucide-react';
 
 interface StudentFormProps {
   student: StudentData;
@@ -19,6 +19,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   
   const [subField, setSubField] = useState<string>(student.ineligibleReason || '');
   const [schoolType, setSchoolType] = useState<SchoolType>((student.prevSchoolType || student.newSchoolType || '') as SchoolType);
+  const [scholarNo, setScholarNo] = useState<string>(student.prevScholarNo || student.newScholarNo || '');
   const [udiseCode, setUdiseCode] = useState<string>(student.prevUdiseCode || student.newUdiseCode || '');
   const [loading, setLoading] = useState(false);
 
@@ -29,10 +30,12 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
     } else if (student.alreadyEnrolled) {
       setStatus(EnrollmentStatus.ALREADY_ENROLLED);
       setSchoolType(student.prevSchoolType as SchoolType);
+      setScholarNo(student.prevScholarNo);
       setUdiseCode(student.prevUdiseCode);
     } else if (student.newlyEnrolled) {
       setStatus(EnrollmentStatus.NEWLY_ENROLLED);
       setSchoolType(student.newSchoolType as SchoolType);
+      setScholarNo(student.newScholarNo);
       setUdiseCode(student.newUdiseCode);
     }
   }, [student]);
@@ -40,17 +43,26 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   const handleSave = async () => {
     if (!status) return;
 
-    // UDISE Validation
+    // Validation
     if ((status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED)) {
-      if (!/^0\d{10}$/.test(udiseCode)) {
-        // We assume the parent component handles beautiful alerts via a prop, 
-        // but for robustness we keep a styled feedback here if needed.
+      if (!scholarNo.trim()) {
+        alert('कृपया स्कॉलर रजिस्टर नंबर दर्ज करें।');
         return;
       }
-      if (!schoolType) return;
+      if (!/^0\d{10}$/.test(udiseCode)) {
+        alert('विद्यालय का यूडायस कोड 11 अंकों का होना चाहिए और 0 से शुरू होना चाहिए।');
+        return;
+      }
+      if (!schoolType) {
+        alert('कृपया विद्यालय का प्रकार चुनें।');
+        return;
+      }
     }
 
-    if (status === EnrollmentStatus.INELIGIBLE && !subField) return;
+    if (status === EnrollmentStatus.INELIGIBLE && !subField) {
+      alert('कृपया अपात्रता का कारण चुनें।');
+      return;
+    }
 
     setLoading(true);
     const updatePayload: Partial<StudentData> = {
@@ -58,9 +70,11 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
       ineligibleReason: status === EnrollmentStatus.INELIGIBLE ? subField : '',
       alreadyEnrolled: status === EnrollmentStatus.ALREADY_ENROLLED ? 'Yes' : '',
       prevSchoolType: status === EnrollmentStatus.ALREADY_ENROLLED ? schoolType : '',
+      prevScholarNo: status === EnrollmentStatus.ALREADY_ENROLLED ? scholarNo : '',
       prevUdiseCode: status === EnrollmentStatus.ALREADY_ENROLLED ? udiseCode : '',
       newlyEnrolled: status === EnrollmentStatus.NEWLY_ENROLLED ? 'Yes' : '',
       newSchoolType: status === EnrollmentStatus.NEWLY_ENROLLED ? schoolType : '',
+      newScholarNo: status === EnrollmentStatus.NEWLY_ENROLLED ? scholarNo : '',
       newUdiseCode: status === EnrollmentStatus.NEWLY_ENROLLED ? udiseCode : '',
     };
 
@@ -88,10 +102,8 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
 
   return (
     <div className={`group relative bg-white border border-slate-200 rounded-[2rem] shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden ${isExisting ? 'ring-2 ring-emerald-500/20' : ''}`}>
-      {/* Decorative side accent */}
       <div className={`absolute top-0 left-0 w-1.5 h-full transition-colors duration-500 ${isExisting ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
 
-      {/* Header Section */}
       <div className={`px-8 py-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 ${isExisting ? 'bg-emerald-50/30' : 'bg-slate-50/50'}`}>
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-sm ${isExisting ? 'bg-emerald-500 text-white' : 'bg-white border border-slate-200 text-indigo-600'}`}>
@@ -122,7 +134,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
       </div>
 
       <div className="p-8">
-        {/* Detail Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-10">
           <div className="space-y-1">
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -150,7 +161,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
           </div>
         </div>
 
-        {/* Status Selection */}
         <div className="space-y-8">
           <div>
             <p className="text-xs font-bold text-slate-500 mb-4 uppercase tracking-wider">Select Enrollment Status</p>
@@ -176,7 +186,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             </div>
           </div>
 
-          {/* Conditional Fields */}
           <div className="min-h-[80px] transition-all duration-500">
             {status === EnrollmentStatus.INELIGIBLE && (
               <div className="animate-in fade-in slide-in-from-top-4 duration-500">
@@ -192,30 +201,37 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <ChevronRight className="rotate-90 text-slate-400" size={18} />
-                  </div>
                 </div>
               </div>
             )}
 
             {(status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-top-4 duration-500">
                 <div className="space-y-3">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">School Type</label>
+                  <select
+                    value={schoolType}
+                    onChange={(e) => setSchoolType(e.target.value as SchoolType)}
+                    className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 outline-none appearance-none transition-all"
+                  >
+                    <option value="">-- Select Type --</option>
+                    <option value="Government">Government School</option>
+                    <option value="Private">Private Institution</option>
+                  </select>
+                </div>
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider">Scholar Register Number</label>
                   <div className="relative">
-                    <select
-                      value={schoolType}
-                      onChange={(e) => setSchoolType(e.target.value as SchoolType)}
-                      className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 outline-none appearance-none transition-all"
-                    >
-                      <option value="">-- Select Type --</option>
-                      <option value="Government">Government School</option>
-                      <option value="Private">Private Institution</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronRight className="rotate-90 text-slate-400" size={18} />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                      <Bookmark size={16} />
                     </div>
+                    <input
+                      type="text"
+                      placeholder="Enter Number"
+                      value={scholarNo}
+                      onChange={(e) => setScholarNo(e.target.value)}
+                      className="w-full bg-slate-50 border-2 border-slate-100 text-slate-900 text-sm rounded-2xl focus:ring-indigo-500 focus:border-indigo-500 block p-4 pl-12 outline-none transition-all placeholder:text-slate-300"
+                    />
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -233,7 +249,6 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
             )}
           </div>
 
-          {/* Action Button */}
           {status && (
             <div className="pt-6 border-t border-slate-100">
               <button
