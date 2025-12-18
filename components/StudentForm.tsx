@@ -197,7 +197,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
                     <Bookmark size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-900" />
                     <input
                       type="text"
-                      placeholder="Reg Number"
+                      placeholder="SR Number"
                       value={scholarNo}
                       onChange={(e) => setScholarNo(e.target.value)}
                       className="w-full input-dark rounded-xl text-base font-bold block p-5 pl-12 outline-none border-2 border-slate-950"
