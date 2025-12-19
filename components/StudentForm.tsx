@@ -18,6 +18,7 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   );
   
   const [subField, setSubField] = useState<string>(student.ineligibleReason || '');
+  const [customOtherReason, setCustomOtherReason] = useState<string>('');
   const [schoolType, setSchoolType] = useState<SchoolType>((student.prevSchoolType || student.newSchoolType || '') as SchoolType);
   const [scholarNo, setScholarNo] = useState<string>(student.prevScholarNo || student.newScholarNo || '');
   const [udiseCode, setUdiseCode] = useState<string>(student.prevUdiseCode || student.newUdiseCode || '');
@@ -26,7 +27,14 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
   useEffect(() => {
     if (student.ineligibleReason) {
       setStatus(EnrollmentStatus.INELIGIBLE);
-      setSubField(student.ineligibleReason);
+      // Check if it's a standard reason or custom
+      if (INELIGIBLE_REASONS.includes(student.ineligibleReason)) {
+        setSubField(student.ineligibleReason);
+        setCustomOtherReason('');
+      } else {
+        setSubField("अन्य");
+        setCustomOtherReason(student.ineligibleReason);
+      }
     } else if (student.alreadyEnrolled) {
       setStatus(EnrollmentStatus.ALREADY_ENROLLED);
       setSchoolType(student.prevSchoolType as SchoolType);
@@ -42,17 +50,27 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
 
   const handleSave = async () => {
     if (!status) return;
+    
+    // Validation
     if ((status === EnrollmentStatus.ALREADY_ENROLLED || status === EnrollmentStatus.NEWLY_ENROLLED)) {
       if (!scholarNo.trim()) { alert('कृपया स्कॉलर रजिस्टर नंबर दर्ज करें।'); return; }
       if (!/^0\d{10}$/.test(udiseCode)) { alert('विद्यालय का यूडायस कोड 11 अंकों का होना चाहिए और 0 से शुरू होना चाहिए।'); return; }
       if (!schoolType) { alert('कृपया विद्यालय का प्रकार चुनें।'); return; }
     }
-    if (status === EnrollmentStatus.INELIGIBLE && !subField) { alert('कृपया अपात्रता का कारण चुनें।'); return; }
+    
+    if (status === EnrollmentStatus.INELIGIBLE) {
+      if (!subField) { alert('कृपया अपात्रता का कारण चुनें।'); return; }
+      if (subField === "अन्य" && !customOtherReason.trim()) { alert('कृपया अन्य कारण का विवरण लिखें।'); return; }
+    }
+
+    const finalIneligibleReason = (status === EnrollmentStatus.INELIGIBLE && subField === "अन्य") 
+      ? customOtherReason.trim() 
+      : subField;
 
     setLoading(true);
     await onUpdate({
       rowIndex: student.rowIndex,
-      ineligibleReason: status === EnrollmentStatus.INELIGIBLE ? subField : '',
+      ineligibleReason: status === EnrollmentStatus.INELIGIBLE ? finalIneligibleReason : '',
       alreadyEnrolled: status === EnrollmentStatus.ALREADY_ENROLLED ? 'Yes' : '',
       prevSchoolType: status === EnrollmentStatus.ALREADY_ENROLLED ? schoolType : '',
       prevScholarNo: status === EnrollmentStatus.ALREADY_ENROLLED ? scholarNo : '',
@@ -164,16 +182,31 @@ const StudentForm: React.FC<StudentFormProps> = ({ student, onUpdate }) => {
 
           <div className="min-h-[100px] bg-slate-100 rounded-2xl p-6 sm:p-10 border-2 border-slate-900 shadow-inner">
             {status === EnrollmentStatus.INELIGIBLE && (
-              <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                <label className="block text-[14px] font-black text-slate-950 mb-5 uppercase tracking-wider">अपात्रता का कारण चुनें</label>
-                <select
-                  value={subField}
-                  onChange={(e) => setSubField(e.target.value)}
-                  className="w-full input-dark rounded-xl text-lg font-bold block p-6 outline-none cursor-pointer border-2 border-slate-950"
-                >
-                  <option value="">-- चुनें --</option>
-                  {INELIGIBLE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
-                </select>
+              <div className="animate-in fade-in slide-in-from-top-2 duration-300 space-y-5">
+                <div>
+                  <label className="block text-[14px] font-black text-slate-950 mb-5 uppercase tracking-wider">अपात्रता का कारण चुनें</label>
+                  <select
+                    value={subField}
+                    onChange={(e) => setSubField(e.target.value)}
+                    className="w-full input-dark rounded-xl text-lg font-bold block p-6 outline-none cursor-pointer border-2 border-slate-950"
+                  >
+                    <option value="">-- चुनें --</option>
+                    {INELIGIBLE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                </div>
+
+                {subField === "अन्य" && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                    <label className="block text-[13px] font-black text-slate-950 mb-3 uppercase tracking-wider">कृपया कारण लिखें</label>
+                    <input
+                      type="text"
+                      placeholder="अन्य कारण दर्ज करें..."
+                      value={customOtherReason}
+                      onChange={(e) => setCustomOtherReason(e.target.value)}
+                      className="w-full input-dark rounded-xl text-lg font-bold block p-6 outline-none border-2 border-slate-950"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
